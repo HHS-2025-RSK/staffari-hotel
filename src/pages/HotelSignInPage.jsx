@@ -106,7 +106,7 @@ input:-webkit-autofill:active {
         }}
       >
         <img
-          src="../../public/image.png"
+          src="/image.png"
           alt="Jungle Safari Theme"
           style={{
             width: "70%",
@@ -258,19 +258,24 @@ input:-webkit-autofill:active {
 }
 
 function Field({ label, value, onChange, type, placeholder, right }) {
+  const inputId = label.toLowerCase();
+
   return (
-    <label style={{ display: "block" }}>
-      <div
+    <div style={{ display: "block" }}>
+      <label
+        htmlFor={inputId}
         style={{
           marginBottom: 8,
           color: "#0f3d34",
           fontFamily: "Poppins",
           fontWeight: 700,
           fontSize: 14,
+          display: "block",
         }}
       >
         {label}
-      </div>
+      </label>
+
       <div
         style={{
           display: "flex",
@@ -283,6 +288,8 @@ function Field({ label, value, onChange, type, placeholder, right }) {
         }}
       >
         <input
+          id={inputId}
+          name={inputId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           type={type}
@@ -293,10 +300,12 @@ function Field({ label, value, onChange, type, placeholder, right }) {
             outline: "none",
             background: "transparent",
             fontSize: 16,
+            color: "#000", // ✅ force text color
+            caretColor: "#0f3d34", // ✅ force cursor color
           }}
         />
         {right && <div>{right}</div>}
       </div>
-    </label>
+    </div>
   );
 }
