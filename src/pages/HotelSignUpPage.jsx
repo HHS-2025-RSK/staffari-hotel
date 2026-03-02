@@ -8,6 +8,68 @@ import { lsSet } from "../utils/storage";
 const TERMS_URL = "https://www.jacmagnus.com";
 const CONTACT_URL = "https://www.jacmagnus.com";
 
+// Premium SVG Icons
+const Icons = {
+  Hotel: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 21h18M3 7v14m18-14v14M3 7l9-4 9 4M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4M7 11h2m4 0h2M7 15h2m4 0h2" />
+    </svg>
+  ),
+  Mail: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <polyline points="22,6 12,13 2,6" />
+    </svg>
+  ),
+  Phone: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  ),
+  Lock: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  ),
+};
+
 export default function HotelSignUpPage() {
   const navigate = useNavigate();
 
@@ -16,10 +78,8 @@ export default function HotelSignUpPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
   const [snack, setSnack] = useState({ open: false, msg: "", color: "red" });
 
   const showSnack = (msg, color = "red") => {
@@ -60,7 +120,6 @@ export default function HotelSignUpPage() {
 
   const signUp = async (e) => {
     e.preventDefault();
-
     const err = validate();
     if (err) {
       showSnack(err, err.includes("Terms") ? "orange" : "red");
@@ -68,11 +127,10 @@ export default function HotelSignUpPage() {
     }
 
     setIsLoading(true);
-
     const user = await firebaseAuthService.signUpWithEmailAndPassword({
       email: email.trim(),
       password,
-      fullName: hotelName.trim(), // Flutter uses fullName field for hotel name
+      fullName: hotelName.trim(),
       phone: phone.trim(),
       role: "Hotel",
       termsAccepted: true,
@@ -80,16 +138,14 @@ export default function HotelSignUpPage() {
     });
 
     setIsLoading(false);
-
     if (!user) {
-      showSnack("Registration failed. Email might already be in use.", "red");
+      showSnack("Registration failed. Email might be in use.", "red");
       return;
     }
 
-    // After signup, store the Firestore user doc in localStorage (same idea as Flutter prefs)
     const userData = await firebaseAuthService.getUserData(user.uid, "Hotel");
     if (!userData) {
-      showSnack("Registered, but could not fetch user profile.", "red");
+      showSnack("Registered, but could not fetch profile.", "red");
       return;
     }
 
@@ -98,290 +154,284 @@ export default function HotelSignUpPage() {
     lsSet("uid", user.uid);
     lsSet("role", "Hotel");
 
-    showSnack(
-      "Registration successful! Please check your email to verify.",
-      "green",
-    );
     navigate("/hotel", { replace: true });
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: staffari.earthyBeige }}>
+    <div
+      style={{
+        height: "100vh",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        background: staffari.earthyBeige,
+      }}
+    >
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800&display=swap');`}
+      </style>
+
+      {/* LEFT SIDE: Brand Image Section */}
       <div
-        style={{ maxWidth: 520, margin: "0 auto", padding: "24px 24px 40px" }}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#0f3d34",
+        }}
       >
-        {/* Header */}
-        <div style={{ height: 8 }} />
-
-        <h1
+        <img
+          src="/image.png"
+          alt="Luxury Hospitality"
           style={{
-            margin: "16px 0 8px",
-            textAlign: "center",
-            fontSize: 32,
-            fontWeight: 800,
-            color: staffari.deepJungleGreen,
-            fontFamily: "Space Grotesk, system-ui",
+            width: "70%",
+            height: "80%",
+            objectFit: "contain",
           }}
-        >
-          List Your Property
-        </h1>
+        />
+      </div>
 
-        <p
-          style={{
-            margin: "0 0 18px",
-            textAlign: "center",
-            fontSize: 16,
-            color: staffari.mutedOlive,
-            fontFamily: "Poppins, system-ui",
-          }}
-        >
-          Find the best talent for your team.
-        </p>
-
-        {/* Form */}
-        <form onSubmit={signUp}>
-          <Field
-            label="Hotel Name"
-            value={hotelName}
-            onChange={setHotelName}
-            placeholder="Hotel Name"
-          />
-
-          <div style={{ height: 16 }} />
-
-          <Field
-            label="Hotel Email"
-            value={email}
-            onChange={setEmail}
-            type="email"
-            placeholder="Hotel Email"
-          />
-
-          <div style={{ height: 16 }} />
-
-          <Field
-            label="Hotel Phone Number"
-            value={phone}
-            onChange={setPhone}
-            type="tel"
-            placeholder="Hotel Phone Number"
-          />
-
-          <div style={{ height: 16 }} />
-
-          <Field
-            label="Password"
-            value={password}
-            onChange={setPassword}
-            type="password"
-            placeholder="Password"
-          />
-
-          <div style={{ height: 16 }} />
-
-          <Field
-            label="Confirm Password"
-            value={confirmPassword}
-            onChange={setConfirmPassword}
-            type="password"
-            placeholder="Confirm Password"
-          />
-
-          <div style={{ height: 14 }} />
-
-          {/* Terms box */}
-          <div
-            style={{
-              background: staffari.cardBackground,
-              borderRadius: 16,
-              border: "1px solid rgba(123,111,87,0.45)",
-              padding: 12,
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
-              fontFamily: "Poppins, system-ui",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              disabled={isLoading}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              style={{
-                width: 18,
-                height: 18,
-                marginTop: 3,
-                accentColor: staffari.emeraldGreen,
-                cursor: isLoading ? "not-allowed" : "pointer",
-              }}
-            />
-
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  color: staffari.charcoalBlack,
-                  fontWeight: 700,
-                  fontSize: 14,
-                }}
-              >
-                I agree to the
-              </div>
-
-              <div
-                style={{
-                  marginTop: 6,
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  alignItems: "center",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => openLink(TERMS_URL)}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                    color: staffari.emeraldGreen,
-                    fontWeight: 700,
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                    fontFamily: "Poppins, system-ui",
-                  }}
-                >
-                  Terms & Conditions
-                </button>
-
-                <span style={{ color: staffari.mutedOlive, fontSize: 10 }}>
-                  Required to register a Hotel account.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ height: 22 }} />
-
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            style={{
-              width: "100%",
-              padding: "14px 16px",
-              borderRadius: 16,
-              border: "none",
-              background: staffari.emeraldGreen,
-              color: "#fff",
-              cursor: canSubmit ? "pointer" : "not-allowed",
-              opacity: canSubmit ? 1 : 0.6,
-              fontSize: 18,
-              fontWeight: 800,
-              fontFamily: "Poppins, system-ui",
-            }}
-          >
-            {isLoading ? "Loading..." : "Register Hotel"}
-          </button>
-        </form>
-
-        <div style={{ height: 10 }} />
-
+      {/* RIGHT SIDE: Signup Form */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          padding: "40px",
+          overflowY: "auto", // ✅ only this scrolls
+        }}
+      >
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 8,
-            fontFamily: "Poppins, system-ui",
+            maxWidth: 440,
+            width: "100%",
           }}
         >
-          <span style={{ color: staffari.charcoalBlack }}>
-            Already have an account?
-          </span>
-          <Link
-            to="/signin"
-            style={{
-              color: staffari.emeraldGreen,
-              fontWeight: 800,
-              textDecoration: "none",
-            }}
-          >
-            Login
-          </Link>
-        </div>
+          <div style={{ textAlign: "center" }}>
+            <h1
+              style={{
+                fontFamily: "'Bebas Neue', cursive",
+                fontSize: 52,
+                color: "#0f3d34",
+                margin: 0,
+              }}
+            >
+              STAFFARI
+            </h1>
+            <p
+              style={{
+                fontFamily: "Poppins",
+                fontSize: 15,
+                fontWeight: 700,
+                color: "#7b6f57",
+                marginTop: 4,
+              }}
+            >
+              List Your Property
+            </p>
+          </div>
 
-        <div style={{ textAlign: "center", marginTop: 10 }}>
-          <button
-            type="button"
-            onClick={() => openLink(CONTACT_URL)}
-            style={{
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              color: staffari.emeraldGreen,
-              fontWeight: 700,
-              fontFamily: "Poppins, system-ui",
-              padding: 8,
-            }}
-          >
-            Contact us
-          </button>
-        </div>
+          <div style={{ height: 32 }} />
 
-        {snack.open && (
+          <form
+            onSubmit={signUp}
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
+            <Field
+              Icon={Icons.Hotel}
+              label="Hotel Name"
+              value={hotelName}
+              onChange={setHotelName}
+              placeholder="Grand Palace Resort"
+            />
+            <Field
+              Icon={Icons.Mail}
+              label="Professional Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="hr@hotel.com"
+            />
+            <Field
+              Icon={Icons.Phone}
+              label="Contact Number"
+              type="tel"
+              value={phone}
+              onChange={setPhone}
+              placeholder="+91 98765 43210"
+            />
+            <Field
+              Icon={Icons.Lock}
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="..."
+            />
+            <Field
+              Icon={Icons.Lock}
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              placeholder="..."
+            />
+
+            <div style={{ height: 4 }} />
+
+            {/* Terms Agreement */}
+            <label
+              style={{
+                display: "flex",
+                gap: "12px",
+                cursor: "pointer",
+                padding: "12px",
+                background: "rgba(123,111,87,0.05)",
+                borderRadius: "12px",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  accentColor: "#0f3d34",
+                  cursor: "pointer",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "13px",
+                  color: "#0f3d34",
+                  fontFamily: "Poppins",
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                }}
+              >
+                I agree to the{" "}
+                <span
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openLink(TERMS_URL);
+                  }}
+                  style={{ fontWeight: 800, textDecoration: "underline" }}
+                >
+                  Terms & Conditions
+                </span>
+                . Required for property registration.
+              </span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              style={{
+                width: "100%",
+                padding: "16px",
+                borderRadius: "14px",
+                border: "none",
+                background: "#0f3d34",
+                color: "#fff",
+                cursor: canSubmit ? "pointer" : "not-allowed",
+                opacity: canSubmit ? 1 : 0.6,
+                fontSize: 18,
+                fontWeight: 800,
+                fontFamily: "Poppins",
+                marginTop: "12px",
+                transition: "all 0.3s ease",
+              }}
+            >
+              {isLoading ? "Creating Account..." : "Register Property"}
+            </button>
+          </form>
+
+          <div style={{ height: 24 }} />
+
           <div
             style={{
-              position: "fixed",
-              left: "50%",
-              bottom: 20,
-              transform: "translateX(-50%)",
-              background:
-                snack.color === "red"
-                  ? "#E53935"
-                  : snack.color === "orange"
-                    ? "#FB8C00"
-                    : staffari.emeraldGreen,
-              color: "#fff",
-              padding: "12px 16px",
-              borderRadius: 12,
-              fontFamily: "Poppins, system-ui",
-              fontWeight: 800,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
-              zIndex: 9999,
-              maxWidth: 560,
+              textAlign: "center",
+              fontFamily: "Poppins",
+              fontSize: "14px",
             }}
           >
-            {snack.msg}
+            <span style={{ color: "#7b6f57" }}>Already listing with us? </span>
+            <Link
+              to="/signin"
+              style={{
+                color: "#0f3d34",
+                fontWeight: 800,
+                textDecoration: "none",
+              }}
+            >
+              Login here
+            </Link>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Snackbar with glass effect */}
+      {snack.open && (
+        <div
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: 30,
+            transform: "translateX(-50%)",
+            background:
+              snack.color === "red"
+                ? "rgba(229, 57, 53, 0.9)"
+                : snack.color === "orange"
+                  ? "rgba(251, 140, 0, 0.9)"
+                  : "rgba(15, 61, 52, 0.9)",
+            color: "#fff",
+            padding: "14px 28px",
+            borderRadius: "14px",
+            fontWeight: 700,
+            zIndex: 9999,
+            backdropFilter: "blur(10px)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            fontFamily: "Poppins",
+          }}
+        >
+          {snack.msg}
+        </div>
+      )}
     </div>
   );
 }
 
-function Field({ label, value, onChange, type = "text", placeholder }) {
+function Field({ label, value, onChange, type = "text", placeholder, Icon }) {
   return (
     <label style={{ display: "block" }}>
       <div
         style={{
-          marginBottom: 8,
-          color: staffari.mutedOlive,
-          fontFamily: "Poppins, system-ui",
+          marginBottom: 6,
+          color: "#0f3d34",
+          fontFamily: "Poppins",
           fontWeight: 700,
+          fontSize: "13px",
+          opacity: 0.8,
         }}
       >
         {label}
       </div>
-
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          background: staffari.cardBackground,
-          borderRadius: 16,
-          border: "1px solid rgba(123,111,87,0.45)",
-          padding: "12px 14px",
+          gap: "12px",
+          background: "#fff",
+          borderRadius: "14px",
+          border: `1.5px solid rgba(15, 61, 52, 0.1)`,
+          padding: "12px 16px",
+          transition: "border-color 0.2s",
         }}
       >
+        <div style={{ color: "#0f3d34", opacity: 0.6 }}>
+          <Icon />
+        </div>
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -392,9 +442,10 @@ function Field({ label, value, onChange, type = "text", placeholder }) {
             border: "none",
             outline: "none",
             background: "transparent",
-            color: staffari.charcoalBlack,
-            fontSize: 16,
-            fontFamily: "Poppins, system-ui",
+            fontSize: "15px",
+            fontFamily: "Poppins",
+            fontWeight: 500,
+            color: "#0f3d34",
           }}
         />
       </div>

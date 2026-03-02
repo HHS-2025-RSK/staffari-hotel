@@ -10,6 +10,7 @@ import MatchingProfilesPage from "./pages/hotel/jobs/MatchingProfilesPage";
 import ApplicantProfilePage from "./pages/hotel/applicants/ApplicantProfilePage";
 import HotelProfileSetupPage from "./pages/hotel/profile/HotelProfileSetupPage";
 import HotelProfilePage from "./pages/hotel/tabs/HotelProfilePage";
+import HotelSignUpPage from "./pages/HotelSignUpPage";
 
 function Placeholder({ title }) {
   return (
@@ -25,10 +26,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/signin" element={<HotelSignInPage />} />
-        <Route
-          path="/signup"
-          element={<Placeholder title="Sign Up (you will provide later)" />}
-        />
+        <Route path="/signup" element={<HotelSignUpPage />} />
 
         <Route element={<HotelProtectedRoute />}>
           <Route path="/hotel" element={<HotelDashboard />} />
