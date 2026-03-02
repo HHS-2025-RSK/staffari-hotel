@@ -10,10 +10,8 @@ export default function HotelSignInPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
   const [snack, setSnack] = useState({ open: false, msg: "", color: "red" });
 
   const canSubmit = useMemo(() => {
@@ -28,14 +26,12 @@ export default function HotelSignInPage() {
 
   const signIn = async (e) => {
     e.preventDefault();
-
     const e1 = email.trim();
     if (!e1 || !e1.includes("@"))
       return showSnack("Please enter a valid email", "red");
     if (!password) return showSnack("Please enter your password", "red");
 
     setIsLoading(true);
-
     const user = await firebaseAuthService.signInWithEmailAndPassword({
       email: e1,
       password,
@@ -48,13 +44,6 @@ export default function HotelSignInPage() {
     }
 
     const role = await firebaseAuthService.getUserRole(user.uid);
-    if (!role) {
-      setIsLoading(false);
-      showSnack("Could not determine user role.", "red");
-      return;
-    }
-
-    // HOTEL ONLY
     if (role !== "Hotel") {
       await firebaseAuthService.signOut();
       setIsLoading(false);
@@ -63,194 +52,207 @@ export default function HotelSignInPage() {
     }
 
     const userData = await firebaseAuthService.getUserData(user.uid, role);
-    if (!userData) {
-      setIsLoading(false);
-      showSnack("Could not fetch user profile.", "red");
-      return;
-    }
-
-    // Store like SharedPreferences (but in localStorage)
     lsSet("isLoggedIn", true);
     Object.entries(userData).forEach(([k, v]) => lsSet(k, v));
     lsSet("uid", user.uid);
     lsSet("role", role);
 
     setIsLoading(false);
-
-    // Navigate first (same idea as Flutter)
     navigate("/hotel", { replace: true });
 
-    // Then request notification permission (post-login)
     try {
       const settings = await notificationService.requestPermissionAfterLogin();
       lsSet("notifAuthorizationStatus", settings.authorizationStatus);
     } catch {
-      // do nothing
+      /* ignore */
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: staffari.earthyBeige }}>
-      <div
-        style={{ maxWidth: 420, margin: "0 auto", padding: "24px 24px 40px" }}
-      >
-        <div style={{ height: 12 }} />
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        background: staffari.earthyBeige,
+      }}
+    >
+      {/* Import Bebas Neue font */}
+      {/* Global Styles */}
+      <style>
+        {`
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;700;800&display=swap');
 
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 20,
-              margin: "0 auto",
-              background: staffari.cardBackground,
-              border: `1px solid rgba(123,111,87,0.35)`,
-              display: "grid",
-              placeItems: "center",
-            }}
-            aria-hidden
-          >
-            <span style={{ fontSize: 34, color: staffari.emeraldGreen }}>
-              ⎈
-            </span>
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+  -webkit-text-fill-color: #000 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+`}
+      </style>
+
+      {/* LEFT SIDE: Image Section */}
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#0f3d34",
+        }}
+      >
+        <img
+          src="../../public/image.png"
+          alt="Jungle Safari Theme"
+          style={{
+            width: "70%",
+            height: "80%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
+
+      {/* RIGHT SIDE: Sign In Section */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px",
+        }}
+      >
+        <div style={{ maxWidth: 420, width: "100%" }}>
+          <div style={{ textAlign: "center" }}>
+            <h1
+              style={{
+                fontFamily: "'Bebas Neue', cursive",
+                fontSize: 64,
+                color: "#0f3d34",
+                margin: 0,
+                lineHeight: 1,
+              }}
+            >
+              Staffari
+            </h1>
+            <p
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#0f3d34",
+                marginTop: 4,
+                letterSpacing: "1px",
+                // textTransform: "uppercase",
+              }}
+            >
+              Hunt Smart. Hire Right.
+            </p>
           </div>
 
-          <div style={{ height: 16 }} />
+          <div style={{ height: 40 }} />
 
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 32,
-              fontWeight: 800,
-              color: staffari.deepJungleGreen,
-              fontFamily: "Space Grotesk, system-ui",
-            }}
+          <form onSubmit={signIn}>
+            <Field
+              label="Email"
+              value={email}
+              onChange={setEmail}
+              type="email"
+              placeholder="Enter your email"
+            />
+            <div style={{ height: 20 }} />
+            <Field
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              type={isPasswordVisible ? "text" : "password"}
+              placeholder="Enter your password"
+              right={
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordVisible((v) => !v)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    color: staffari.mutedOlive,
+                    fontWeight: 700,
+                  }}
+                >
+                  {isPasswordVisible ? "Hide" : "Show"}
+                </button>
+              }
+            />
+
+            <div style={{ height: 32 }} />
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              style={{
+                width: "100%",
+                padding: "16px",
+                borderRadius: 12,
+                border: "none",
+                background: "#0f3d34", // Brand Color
+                color: "#fff",
+                cursor: canSubmit ? "pointer" : "not-allowed",
+                opacity: canSubmit ? 1 : 0.6,
+                fontSize: 18,
+                fontWeight: 800,
+                fontFamily: "Poppins, sans-serif",
+                transition: "all 0.3s ease",
+              }}
+            >
+              {isLoading ? "Signing In..." : "Login to Portal"}
+            </button>
+          </form>
+
+          <div style={{ height: 24 }} />
+
+          <div
+            style={{ textAlign: "center", fontFamily: "Poppins, sans-serif" }}
           >
-            Welcome Back!
-          </h1>
-
-          <div style={{ height: 10 }} />
-
-          <p
-            style={{
-              margin: 0,
-              fontSize: 16,
-              color: staffari.mutedOlive,
-              fontFamily: "Poppins, system-ui",
-            }}
-          >
-            Continue your talent hunt.
-          </p>
+            <span style={{ color: staffari.charcoalBlack }}>
+              Don't have an account?{" "}
+            </span>
+            <Link
+              to="/signup"
+              style={{
+                color: "#0f3d34",
+                fontWeight: 800,
+                textDecoration: "none",
+              }}
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
+      </div>
 
-        <div style={{ height: 34 }} />
-
-        <form onSubmit={signIn}>
-          <Field
-            label="Email"
-            value={email}
-            onChange={setEmail}
-            type="email"
-            placeholder="Email"
-          />
-
-          <div style={{ height: 16 }} />
-
-          <Field
-            label="Password"
-            value={password}
-            onChange={setPassword}
-            type={isPasswordVisible ? "text" : "password"}
-            placeholder="Password"
-            right={
-              <button
-                type="button"
-                onClick={() => setIsPasswordVisible((v) => !v)}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  cursor: "pointer",
-                  color: staffari.mutedOlive,
-                  fontFamily: "Poppins, system-ui",
-                  fontWeight: 700,
-                }}
-              >
-                {isPasswordVisible ? "Hide" : "Show"}
-              </button>
-            }
-          />
-
-          <div style={{ height: 26 }} />
-
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            style={{
-              width: "100%",
-              padding: "14px 16px",
-              borderRadius: 16,
-              border: "none",
-              background: staffari.emeraldGreen,
-              color: "#fff",
-              cursor: canSubmit ? "pointer" : "not-allowed",
-              opacity: canSubmit ? 1 : 0.6,
-              fontSize: 18,
-              fontWeight: 800,
-              fontFamily: "Poppins, system-ui",
-            }}
-          >
-            {isLoading ? "Loading..." : "Login"}
-          </button>
-        </form>
-
-        <div style={{ height: 16 }} />
-
+      {/* Snackbar remains the same */}
+      {snack.open && (
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 8,
-            fontFamily: "Poppins, system-ui",
+            position: "fixed",
+            left: "50%",
+            bottom: 20,
+            transform: "translateX(-50%)",
+            background:
+              snack.color === "red" ? "#E53935" : staffari.emeraldGreen,
+            color: "#fff",
+            padding: "12px 24px",
+            borderRadius: 12,
+            fontWeight: 800,
+            zIndex: 9999,
           }}
         >
-          <span style={{ color: staffari.charcoalBlack }}>
-            Don't have an account?
-          </span>
-          <Link
-            to="/signup"
-            style={{
-              color: staffari.emeraldGreen,
-              fontWeight: 800,
-              textDecoration: "none",
-            }}
-          >
-            Sign Up
-          </Link>
+          {snack.msg}
         </div>
-
-        {snack.open && (
-          <div
-            style={{
-              position: "fixed",
-              left: "50%",
-              bottom: 20,
-              transform: "translateX(-50%)",
-              background:
-                snack.color === "red" ? "#E53935" : staffari.emeraldGreen,
-              color: "#fff",
-              padding: "12px 16px",
-              borderRadius: 12,
-              fontFamily: "Poppins, system-ui",
-              fontWeight: 800,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
-              zIndex: 9999,
-              maxWidth: 520,
-            }}
-          >
-            {snack.msg}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -261,23 +263,23 @@ function Field({ label, value, onChange, type, placeholder, right }) {
       <div
         style={{
           marginBottom: 8,
-          color: staffari.mutedOlive,
-          fontFamily: "Poppins, system-ui",
+          color: "#0f3d34",
+          fontFamily: "Poppins",
           fontWeight: 700,
+          fontSize: 14,
         }}
       >
         {label}
       </div>
-
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 10,
-          background: staffari.cardBackground,
-          borderRadius: 16,
-          border: `1px solid rgba(123,111,87,0.45)`,
-          padding: "12px 14px",
+          background: "#fff",
+          borderRadius: 12,
+          border: `1px solid rgba(15, 61, 52, 0.2)`,
+          padding: "14px",
         }}
       >
         <input
@@ -290,12 +292,10 @@ function Field({ label, value, onChange, type, placeholder, right }) {
             border: "none",
             outline: "none",
             background: "transparent",
-            color: staffari.charcoalBlack,
             fontSize: 16,
-            fontFamily: "Poppins, system-ui",
           }}
         />
-        {right ? <div>{right}</div> : null}
+        {right && <div>{right}</div>}
       </div>
     </label>
   );
