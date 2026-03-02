@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { staffari } from "../theme/staffariTheme";
 import { lsGet } from "../utils/storage";
 
 import JobApplicantsDashboardPage from "./hotel/tabs/JobApplicantsDashboardPage";
@@ -132,7 +131,7 @@ export default function HotelDashboard() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: staffari.earthyBeige,
+        background: "#bef5a7d3",
         fontFamily: "Poppins, sans-serif",
       }}
     >

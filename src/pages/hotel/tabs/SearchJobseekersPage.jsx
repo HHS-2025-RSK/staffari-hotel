@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { staffari } from "../../../theme/staffariTheme";
 import { lsGet } from "../../../utils/storage";
 import { fetchJobseekers } from "../../../api/jobseekersApi";
 
+// --- CONSTANTS ---
 const LIMIT = 20;
 
 const availabilityOptions = [
@@ -50,17 +50,121 @@ const departmentOptions = [
   "Transport/Logistics",
 ];
 
+// --- PREMIUM ICONS ---
+const Icons = {
+  Filter: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+  ),
+  Refresh: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M23 4v6h-6" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  ),
+  User: () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  Check: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  ),
+  ChevronUp: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  ),
+  MapPin: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  ),
+};
+
+// --- HELPERS ---
 function s(v) {
   if (v == null) return null;
   const t = String(v).trim();
   return t ? t : null;
 }
-
 function listStr(v) {
   if (!Array.isArray(v)) return [];
   return v.map((x) => String(x ?? "").trim()).filter(Boolean);
 }
-
 function openExternal(url) {
   const u = s(url);
   if (!u) return;
@@ -72,13 +176,11 @@ export default function SearchJobseekersPage() {
   const listRef = useRef(null);
 
   const [hotelId, setHotelId] = useState(null);
-
   const [jobseekers, setJobseekers] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-
   const [page, setPage] = useState(1);
   const [totalMatching, setTotalMatching] = useState(0);
 
@@ -88,14 +190,12 @@ export default function SearchJobseekersPage() {
   const [selectedEmploymentStatus, setSelectedEmploymentStatus] =
     useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
-
   const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => {
     const uid = lsGet("uid", null);
     if (!uid) {
       setIsFirstLoad(false);
-      alert("Hotel ID not found. Please login again.");
       navigate("/signin", { replace: true });
       return;
     }
@@ -123,15 +223,12 @@ export default function SearchJobseekersPage() {
 
   const loadFirstPage = async () => {
     if (!hotelId) return;
-
     setIsFirstLoad(true);
     setIsLoadingMore(false);
     setError(null);
     setJobseekers([]);
     setPage(1);
     setHasMore(true);
-    setTotalMatching(0);
-
     try {
       const data = await fetchJobseekers({
         hotelId,
@@ -142,7 +239,6 @@ export default function SearchJobseekersPage() {
         employmentStatus: selectedEmploymentStatus,
         department: selectedDepartment,
       });
-
       setJobseekers(Array.isArray(data?.jobseekers) ? data.jobseekers : []);
       setHasMore(data?.has_more === true);
       setTotalMatching(Number(data?.total_matching ?? 0) || 0);
@@ -154,14 +250,11 @@ export default function SearchJobseekersPage() {
   };
 
   useEffect(() => {
-    if (!queryArgs) return;
-    loadFirstPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (queryArgs) loadFirstPage();
   }, [queryArgs]);
 
   const loadNextPageIfNeeded = async () => {
     if (isFirstLoad || isLoadingMore || !hasMore || error || !hotelId) return;
-
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
@@ -174,13 +267,11 @@ export default function SearchJobseekersPage() {
         employmentStatus: selectedEmploymentStatus,
         department: selectedDepartment,
       });
-
       setJobseekers((prev) =>
         prev.concat(Array.isArray(data?.jobseekers) ? data.jobseekers : []),
       );
       setHasMore(data?.has_more === true);
       setPage(nextPage);
-      setTotalMatching((prev) => Number(data?.total_matching ?? prev) || prev);
     } catch (e) {
       setError(e);
     } finally {
@@ -190,10 +281,8 @@ export default function SearchJobseekersPage() {
 
   const onScroll = (e) => {
     const el = e.currentTarget;
-    const threshold = 250;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - threshold) {
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 250)
       loadNextPageIfNeeded();
-    }
   };
 
   const clearFilters = () => {
@@ -206,62 +295,64 @@ export default function SearchJobseekersPage() {
   return (
     <div
       style={{
-        height: "calc(100vh - 120px)",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: staffari.cardBackground,
-        borderRadius: 16,
-        border: "1px solid rgba(123,111,87,0.18)",
-        overflow: "hidden",
-        fontFamily: "Poppins, system-ui",
+        fontFamily: "Poppins, sans-serif",
       }}
     >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;800&display=swap');
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
       {/* Header */}
       <div
         style={{
-          padding: "18px 20px 12px",
-          borderBottom: "1px solid rgba(123,111,87,0.14)",
           display: "flex",
-          alignItems: "center",
-          gap: 12,
-          background: staffari.cardBackground,
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          marginBottom: "32px",
         }}
       >
-        <div style={{ flex: 1 }}>
-          <div
+        <div>
+          <h1
             style={{
-              fontFamily: "Space Grotesk, system-ui",
-              fontSize: 28,
-              fontWeight: 900,
-              color: staffari.deepJungleGreen,
+              fontFamily: "Bebas Neue",
+              fontSize: "42px",
+              color: "#0f3d34",
+              margin: 0,
+              letterSpacing: "1px",
             }}
           >
             Search Talent
-          </div>
-          {!isFirstLoad && totalMatching > 0 ? (
-            <div
-              style={{
-                marginTop: 4,
-                color: staffari.mutedOlive,
-                fontWeight: 700,
-              }}
-            >
-              {totalMatching} found
-            </div>
-          ) : null}
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              color: "#7b6f57",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
+          >
+            {!isFirstLoad && totalMatching > 0
+              ? `${totalMatching} qualified candidates matching your criteria`
+              : "Discover elite hospitality professionals"}
+          </p>
         </div>
 
-        <button
-          onClick={() => setFilterOpen(true)}
-          style={iconBtn()}
-          title="Filters"
-        >
-          ⛭
-        </button>
-
-        <button onClick={loadFirstPage} style={iconBtn()} title="Refresh">
-          ↻
-        </button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button
+            onClick={() => setFilterOpen(true)}
+            style={iconBtn()}
+            title="Filters"
+          >
+            <Icons.Filter /> <span style={{ marginLeft: "8px" }}>Filters</span>
+          </button>
+          <button onClick={loadFirstPage} style={iconBtn()} title="Refresh">
+            <Icons.Refresh />
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -270,9 +361,9 @@ export default function SearchJobseekersPage() {
         onScroll={onScroll}
         style={{
           flex: 1,
-          overflow: "auto",
-          padding: 16,
-          background: staffari.cardBackground,
+          overflowY: "auto",
+          paddingRight: "8px",
+          scrollBehavior: "smooth",
         }}
       >
         {isFirstLoad ? (
@@ -282,44 +373,44 @@ export default function SearchJobseekersPage() {
         ) : jobseekers.length === 0 ? (
           <EmptyState />
         ) : (
-          <>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          >
             {jobseekers.map((seeker, idx) => (
               <JobseekerCard
                 key={(seeker?.id ?? seeker?.uid ?? idx) + ""}
                 seeker={seeker}
-                onOpenProfile={(id) => navigate(`/applicant/${id}`)} // change route if needed
+                onOpenProfile={(id) => navigate(`/hotel/applicants/${id}`)}
               />
             ))}
 
-            {isLoadingMore ? (
+            {isLoadingMore && (
               <div
                 style={{
-                  padding: "12px 0",
+                  padding: "30px",
                   display: "grid",
                   placeItems: "center",
                 }}
               >
                 <div
                   style={{
-                    width: 22,
-                    height: 22,
+                    width: 28,
+                    height: 28,
                     borderRadius: "50%",
-                    border: "2.5px solid rgba(25,95,78,0.25)",
-                    borderTopColor: staffari.emeraldGreen,
+                    border: "3px solid #f3f3f3",
+                    borderTopColor: "#0f3d34",
                     animation: "spin 1s linear infinite",
                   }}
                 />
-                <style>{`@keyframes spin { to { transform: rotate(360deg);} }`}</style>
               </div>
-            ) : (
-              <div style={{ height: 24 }} />
             )}
-          </>
+            <div style={{ height: 40 }} />
+          </div>
         )}
       </div>
 
       {/* Filter sheet */}
-      {filterOpen ? (
+      {filterOpen && (
         <FilterSheet
           initial={{
             location,
@@ -340,81 +431,46 @@ export default function SearchJobseekersPage() {
             setSelectedDepartment(v.department);
           }}
         />
-      ) : null}
+      )}
     </div>
   );
 }
 
 function JobseekerCard({ seeker, onOpenProfile }) {
+  const [open, setOpen] = useState(false);
   const id = s(seeker?.id);
-  const name = s(seeker?.fullName) || "Unknown";
-  const headline = s(seeker?.headline) || "No headline";
-  const department = s(seeker?.department) || "N/A";
+  const name = s(seeker?.fullName) || "Anonymous Candidate";
+  const headline = s(seeker?.headline) || "Professional Hospitality Member";
+  const department = s(seeker?.department) || "General";
   const expYears = seeker?.experience_years ?? 0;
-
-  const location = s(seeker?.location) || "N/A";
-  const availability = s(seeker?.availability) || "N/A";
+  const location = s(seeker?.location) || "Not Specified";
+  const availability = s(seeker?.availability) || "Contact for Availability";
   const status = s(seeker?.employment_status) || "N/A";
-
   const profilePic = s(seeker?.profile_pic_url);
+  const banner = s(seeker?.banner_image_url);
   const resumeUrl = s(seeker?.resume_url);
-  const email = s(seeker?.contact_email);
-  const phone = s(seeker?.phone_number) || s(seeker?.phone);
-  const state = s(seeker?.state);
-  const updatedAt = s(seeker?.updated_at);
+  const videoCvUrl = s(seeker?.video_cv_url);
   const verified = seeker?.isEmailVerified === true;
-
   const skills = listStr(seeker?.skills);
   const languages = listStr(seeker?.languages);
 
-  // “Future fields” from your Flutter UI
-  const banner = s(seeker?.banner_image_url);
-  const videoCvUrl = s(seeker?.video_cv_url);
-  const pitScore = seeker?.["PIT-Medium-score"];
-  const linkedin = s(seeker?.linkedin_profile);
-  const portfolio = s(seeker?.portfolio);
-  const qualifications = s(seeker?.qualifications);
-  const college = s(seeker?.college_name);
-  const passout =
-    seeker?.year_of_passout != null ? String(seeker.year_of_passout) : null;
-  const grade = s(seeker?.grade);
-  const preferredCategories = listStr(seeker?.preferred_categories);
-  const certifications = listStr(seeker?.certifications);
-
-  const [open, setOpen] = useState(false);
-
-  const infoRow = (label, value) => {
-    if (!value) return null;
+  const infoRow = (Icon, label, value) => {
+    if (!value || value === "N/A") return null;
     return (
-      <div style={{ marginBottom: 8, lineHeight: 1.35 }}>
-        <span style={{ color: staffari.mutedOlive, fontWeight: 800 }}>
-          {label}:{" "}
-        </span>
-        <span style={{ color: staffari.charcoalBlack, fontWeight: 700 }}>
-          {value}
-        </span>
-      </div>
-    );
-  };
-
-  const chips = (title, items) => {
-    if (!items?.length) return null;
-    return (
-      <div style={{ marginTop: 10 }}>
-        <div
-          style={{ fontSize: 13, color: staffari.mutedOlive, fontWeight: 800 }}
-        >
-          {title}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "13px",
+          color: "#555",
+        }}
+      >
+        <div style={{ color: "#7b6f57" }}>
+          <Icon />
         </div>
-        <div
-          style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}
-        >
-          {items.map((x) => (
-            <span key={x} style={chipStyle()}>
-              {x}
-            </span>
-          ))}
-        </div>
+        <span style={{ fontWeight: 500 }}>{label}:</span>
+        <span style={{ fontWeight: 700, color: "#0f3d34" }}>{value}</span>
       </div>
     );
   };
@@ -422,39 +478,45 @@ function JobseekerCard({ seeker, onOpenProfile }) {
   return (
     <div
       style={{
-        marginBottom: 16,
         background: "#fff",
-        borderRadius: 16,
-        border: "1px solid rgba(123,111,87,0.20)",
+        borderRadius: "24px",
+        border: "1px solid rgba(15, 61, 52, 0.08)",
         overflow: "hidden",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        boxShadow: open
+          ? "0 12px 30px rgba(15, 61, 52, 0.1)"
+          : "0 2px 4px rgba(0,0,0,0.02)",
       }}
     >
-      {banner ? (
-        <img
-          src={banner}
-          alt=""
-          style={{
-            height: 120,
-            width: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-          onError={(e) => (e.currentTarget.style.display = "none")}
-        />
-      ) : null}
+      {banner && (
+        <div style={{ height: "100px", width: "100%", overflow: "hidden" }}>
+          <img
+            src={banner}
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 0.8,
+            }}
+          />
+        </div>
+      )}
 
-      <div style={{ padding: 20 }}>
-        {/* Header */}
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+      <div style={{ padding: "24px" }}>
+        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
           <div
             style={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              background: "rgba(25,95,78,0.15)",
-              overflow: "hidden",
+              width: "72px",
+              height: "72px",
+              borderRadius: "20px",
+              background: "#f0f2f1",
               display: "grid",
               placeItems: "center",
+              overflow: "hidden",
+              border: "3px solid #fff",
+              marginTop: banner ? "-45px" : "0",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
             }}
           >
             {profilePic ? (
@@ -464,130 +526,210 @@ function JobseekerCard({ seeker, onOpenProfile }) {
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
-              <span
-                style={{ color: staffari.deepJungleGreen, fontWeight: 900 }}
-              >
-                👤
-              </span>
+              <div style={{ color: "#0f3d34" }}>
+                <Icons.User />
+              </div>
             )}
           </div>
 
           <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontFamily: "Space Grotesk, system-ui",
-                fontSize: 20,
-                fontWeight: 900,
-                color: staffari.deepJungleGreen,
-              }}
-            >
-              {name}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  fontWeight: 800,
+                  color: "#0f3d34",
+                }}
+              >
+                {name}
+              </h2>
+              {verified && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    background: "#10b981",
+                    color: "#fff",
+                    padding: "2px 8px",
+                    borderRadius: "20px",
+                    fontSize: "10px",
+                    fontWeight: 800,
+                  }}
+                >
+                  <Icons.Check />{" "}
+                  <span style={{ marginLeft: "4px" }}>VERIFIED</span>
+                </div>
+              )}
             </div>
-            <div
+            <p
               style={{
-                marginTop: 4,
-                color: staffari.mutedOlive,
-                fontWeight: 700,
+                margin: "4px 0",
+                fontSize: "14px",
+                color: "#7b6f57",
+                fontWeight: 600,
               }}
             >
               {headline}
-            </div>
+            </p>
             <div
               style={{
-                marginTop: 6,
-                color: staffari.charcoalBlack,
+                display: "flex",
+                gap: "12px",
+                fontSize: "12px",
                 fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                color: "#0f3d34",
+                marginTop: "8px",
               }}
             >
-              {department} • {expYears} years
+              <span>{department}</span>
+              <span style={{ opacity: 0.3 }}>|</span>
+              <span>{expYears} Years Experience</span>
             </div>
           </div>
 
-          {verified ? (
-            <div
-              style={{
-                padding: "6px 10px",
-                borderRadius: 999,
-                background: "rgba(22,163,74,0.12)",
-                color: "rgb(20,83,45)",
-                fontWeight: 900,
-                fontSize: 12,
-              }}
-            >
-              Verified
-            </div>
-          ) : null}
+          <button onClick={() => onOpenProfile(id)} style={primaryActionBtn()}>
+            View Profile
+          </button>
         </div>
 
-        <div style={{ height: 14 }} />
-        {infoRow("Location", location)}
-        {infoRow("Availability", availability)}
-        {infoRow("Status", status)}
-        {pitScore != null ? infoRow("PIT Score", String(pitScore)) : null}
+        <div
+          style={{
+            display: "flex",
+            gap: "24px",
+            marginTop: "20px",
+            flexWrap: "wrap",
+          }}
+        >
+          {infoRow(Icons.MapPin, "Location", location)}
+          {infoRow(
+            () => (
+              <Icons.Check style={{ width: 14, height: 14 }} />
+            ),
+            "Availability",
+            availability,
+          )}
+        </div>
 
-        {chips("Skills", skills)}
-        {chips("Languages", languages)}
-
-        <div style={{ height: 10 }} />
-
-        <button onClick={() => setOpen((v) => !v)} style={moreBtn()}>
-          {open ? "Hide details" : "More details"}
-        </button>
-
-        {open ? (
-          <div style={{ marginTop: 12 }}>
-            {email ? infoRow("Email", email) : null}
-            {phone ? infoRow("Phone", phone) : null}
-            {state ? infoRow("State", state) : null}
-            {updatedAt ? infoRow("Updated", updatedAt) : null}
-
-            {qualifications ? infoRow("Qualifications", qualifications) : null}
-            {college ? infoRow("College", college) : null}
-            {passout ? infoRow("Year of passout", passout) : null}
-            {grade ? infoRow("Grade", grade) : null}
-            {linkedin ? infoRow("LinkedIn", linkedin) : null}
-            {portfolio ? infoRow("Portfolio", portfolio) : null}
-
-            {chips("Preferred categories", preferredCategories)}
-            {chips("Certifications", certifications)}
-
+        {open && (
+          <div
+            style={{
+              marginTop: "24px",
+              paddingTop: "24px",
+              borderTop: "1px dashed rgba(123,111,87,0.2)",
+            }}
+          >
             <div
               style={{
-                marginTop: 12,
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 10,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
               }}
             >
-              {resumeUrl ? (
+              {infoRow(
+                () => (
+                  <Icons.Check style={{ width: 12 }} />
+                ),
+                "Employment",
+                status,
+              )}
+              {s(seeker?.state) && infoRow(Icons.MapPin, "State", seeker.state)}
+            </div>
+
+            {skills.length > 0 && (
+              <Chips title="Core Competencies" items={skills} />
+            )}
+            {languages.length > 0 && (
+              <Chips title="Languages" items={languages} />
+            )}
+
+            <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+              {resumeUrl && (
                 <button
                   onClick={() => openExternal(resumeUrl)}
                   style={outlineActionBtn()}
                 >
-                  Resume
+                  Curriculum Vitae
                 </button>
-              ) : null}
-
-              {videoCvUrl ? (
+              )}
+              {videoCvUrl && (
                 <button
                   onClick={() => openExternal(videoCvUrl)}
                   style={outlineActionBtn()}
                 >
-                  Video CV
+                  Watch Video CV
                 </button>
-              ) : null}
-
-              {id ? (
-                <button
-                  onClick={() => onOpenProfile(id)}
-                  style={primaryActionBtn()}
-                >
-                  Open Profile
-                </button>
-              ) : null}
+              )}
             </div>
           </div>
-        ) : null}
+        )}
+
+        <button
+          onClick={() => setOpen(!open)}
+          style={{
+            width: "100%",
+            background: "none",
+            border: "none",
+            color: "#7b6f57",
+            fontWeight: 800,
+            fontSize: "12px",
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            marginTop: "20px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+          }}
+        >
+          {open ? (
+            <>
+              Less Details <Icons.ChevronUp />
+            </>
+          ) : (
+            <>
+              More Details <Icons.ChevronDown />
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Chips({ title, items }) {
+  return (
+    <div style={{ marginTop: "16px" }}>
+      <p
+        style={{
+          margin: "0 0 8px",
+          fontSize: "11px",
+          fontWeight: 800,
+          color: "#7b6f57",
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        {items.map((it) => (
+          <span
+            key={it}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "10px",
+              background: "#f0f2f1",
+              color: "#0f3d34",
+              fontSize: "12px",
+              fontWeight: 700,
+            }}
+          >
+            {it}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -596,57 +738,84 @@ function JobseekerCard({ seeker, onOpenProfile }) {
 function FilterSheet({ initial, onClose, onClear, onApply }) {
   const [tempLocation, setTempLocation] = useState(initial.location ?? "");
   const [tempAvailability, setTempAvailability] = useState(
-    initial.availability ?? null,
+    initial.availability ?? "Any",
   );
   const [tempEmployment, setTempEmployment] = useState(
-    initial.employmentStatus ?? null,
+    initial.employmentStatus ?? "Any",
   );
   const [tempDepartment, setTempDepartment] = useState(
-    initial.department ?? null,
+    initial.department ?? "Any",
   );
 
   return (
-    <div onClick={onClose} style={sheetBackdrop()}>
-      <div onClick={(e) => e.stopPropagation()} style={sheet()}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15, 61, 52, 0.4)",
+        zIndex: 3000,
+        display: "grid",
+        placeItems: "center",
+        backdropFilter: "blur(4px)",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(480px, 100%)",
+          background: "#fff",
+          borderRadius: "24px",
+          padding: "32px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "32px",
+          }}
+        >
+          <h2
             style={{
-              fontFamily: "Space Grotesk, system-ui",
-              fontSize: 18,
-              fontWeight: 900,
-              color: staffari.deepJungleGreen,
+              fontFamily: "Bebas Neue",
+              fontSize: "32px",
+              color: "#0f3d34",
+              margin: 0,
             }}
           >
-            Search Filters
-          </div>
-          <div style={{ marginLeft: "auto" }} />
-          <button onClick={onClose} style={iconBtn()} title="Close">
+            Filter Talent
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              border: "none",
+              background: "none",
+              fontSize: "20px",
+              cursor: "pointer",
+            }}
+          >
             ✕
           </button>
         </div>
 
-        <div style={{ height: 12 }} />
-
-        <div style={fieldWrap()}>
-          <div style={label()}>Location (City/State)</div>
+        <FilterField label="Location">
           <input
             value={tempLocation}
             onChange={(e) => setTempLocation(e.target.value)}
-            style={input()}
-            placeholder="Any"
+            style={inputStyle()}
+            placeholder="City or State"
           />
-        </div>
+        </FilterField>
 
-        <div style={fieldWrap()}>
-          <div style={label()}>Availability</div>
+        <FilterField label="Availability">
           <select
-            value={tempAvailability ?? "Any"}
-            onChange={(e) =>
-              setTempAvailability(
-                e.target.value === "Any" ? null : e.target.value,
-              )
-            }
-            style={input()}
+            value={tempAvailability}
+            onChange={(e) => setTempAvailability(e.target.value)}
+            style={inputStyle()}
           >
             {availabilityOptions.map((o) => (
               <option key={o} value={o}>
@@ -654,18 +823,13 @@ function FilterSheet({ initial, onClose, onClear, onApply }) {
               </option>
             ))}
           </select>
-        </div>
+        </FilterField>
 
-        <div style={fieldWrap()}>
-          <div style={label()}>Employment Status</div>
+        <FilterField label="Employment Status">
           <select
-            value={tempEmployment ?? "Any"}
-            onChange={(e) =>
-              setTempEmployment(
-                e.target.value === "Any" ? null : e.target.value,
-              )
-            }
-            style={input()}
+            value={tempEmployment}
+            onChange={(e) => setTempEmployment(e.target.value)}
+            style={inputStyle()}
           >
             {employmentStatusOptions.map((o) => (
               <option key={o} value={o}>
@@ -673,18 +837,13 @@ function FilterSheet({ initial, onClose, onClear, onApply }) {
               </option>
             ))}
           </select>
-        </div>
+        </FilterField>
 
-        <div style={fieldWrap()}>
-          <div style={label()}>Department</div>
+        <FilterField label="Department">
           <select
-            value={tempDepartment ?? "Any"}
-            onChange={(e) =>
-              setTempDepartment(
-                e.target.value === "Any" ? null : e.target.value,
-              )
-            }
-            style={input()}
+            value={tempDepartment}
+            onChange={(e) => setTempDepartment(e.target.value)}
+            style={inputStyle()}
           >
             {departmentOptions.map((o) => (
               <option key={o} value={o}>
@@ -692,22 +851,45 @@ function FilterSheet({ initial, onClose, onClear, onApply }) {
               </option>
             ))}
           </select>
-        </div>
+        </FilterField>
 
-        <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-          <button onClick={onClear} style={outlineActionBtn()}>
-            Clear
+        <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+          <button
+            onClick={onClear}
+            style={{
+              flex: 1,
+              padding: "14px",
+              borderRadius: "12px",
+              border: "1.5px solid #0f3d34",
+              background: "none",
+              color: "#0f3d34",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Clear All
           </button>
           <button
             onClick={() =>
               onApply({
                 location: tempLocation,
-                availability: tempAvailability,
-                employmentStatus: tempEmployment,
-                department: tempDepartment,
+                availability:
+                  tempAvailability === "Any" ? null : tempAvailability,
+                employmentStatus:
+                  tempEmployment === "Any" ? null : tempEmployment,
+                department: tempDepartment === "Any" ? null : tempDepartment,
               })
             }
-            style={primaryActionBtn()}
+            style={{
+              flex: 1,
+              padding: "14px",
+              borderRadius: "12px",
+              border: "none",
+              background: "#0f3d34",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
           >
             Apply
           </button>
@@ -717,188 +899,133 @@ function FilterSheet({ initial, onClose, onClear, onApply }) {
   );
 }
 
-/* ---- small UI helpers ---- */
+const FilterField = ({ label, children }) => (
+  <div style={{ marginBottom: "20px" }}>
+    <label
+      style={{
+        display: "block",
+        fontSize: "11px",
+        fontWeight: 800,
+        color: "#7b6f57",
+        textTransform: "uppercase",
+        marginBottom: "8px",
+        letterSpacing: "0.5px",
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+// --- STYLES ---
+const iconBtn = () => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  border: "1.5px solid rgba(15, 61, 52, 0.1)",
+  background: "#fff",
+  borderRadius: "12px",
+  padding: "10px 16px",
+  cursor: "pointer",
+  fontWeight: 700,
+  color: "#0f3d34",
+  fontSize: "14px",
+});
+const primaryActionBtn = () => ({
+  background: "#0f3d34",
+  color: "#fff",
+  border: "none",
+  padding: "10px 20px",
+  borderRadius: "12px",
+  fontWeight: 700,
+  cursor: "pointer",
+  fontSize: "14px",
+  fontFamily: "Poppins",
+});
+const outlineActionBtn = () => ({
+  background: "#fff",
+  color: "#0f3d34",
+  border: "1.5px solid #0f3d34",
+  padding: "10px 20px",
+  borderRadius: "12px",
+  fontWeight: 700,
+  cursor: "pointer",
+  fontSize: "13px",
+  fontFamily: "Poppins",
+});
+const inputStyle = () => ({
+  width: "100%",
+  padding: "12px",
+  borderRadius: "12px",
+  border: "1px solid rgba(15, 61, 52, 0.15)",
+  fontSize: "15px",
+  fontFamily: "Poppins",
+  outline: "none",
+  background: "#f9f8f6",
+  color: "#0f3d34",
+});
 
 function ShimmerList() {
   return (
-    <div>
-      {Array.from({ length: 6 }).map((_, i) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {[1, 2, 3].map((i) => (
         <div
           key={i}
           style={{
-            height: 180,
-            marginBottom: 16,
-            borderRadius: 16,
-            background:
-              "linear-gradient(90deg, rgba(230,230,230,1) 25%, rgba(250,250,250,1) 50%, rgba(230,230,230,1) 75%)",
-            backgroundSize: "400% 100%",
-            animation: "shimmer 1.2s ease-in-out infinite",
+            height: "180px",
+            borderRadius: "24px",
+            background: "#fff",
+            animation: "pulse 1.5s infinite",
           }}
         />
       ))}
-      <style>{`@keyframes shimmer { 0%{background-position:100% 0;} 100%{background-position:0 0;} }`}</style>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }`}</style>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div style={{ minHeight: "55vh", display: "grid", placeItems: "center" }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 64, color: staffari.mutedOlive }}>⌕</div>
-        <div
-          style={{
-            fontFamily: "Space Grotesk, system-ui",
-            fontSize: 22,
-            fontWeight: 900,
-            color: staffari.deepJungleGreen,
-          }}
-        >
-          No Candidates Found
-        </div>
-        <div
-          style={{ marginTop: 8, color: staffari.mutedOlive, fontWeight: 700 }}
-        >
-          Try adjusting your filters.
-        </div>
-      </div>
+    <div style={{ textAlign: "center", padding: "80px 20px" }}>
+      <div style={{ fontSize: "64px", marginBottom: "20px" }}>🔍</div>
+      <h2
+        style={{
+          fontFamily: "Bebas Neue",
+          fontSize: "32px",
+          color: "#0f3d34",
+          margin: 0,
+        }}
+      >
+        No Candidates Found
+      </h2>
+      <p style={{ color: "#7b6f57", fontSize: "14px" }}>
+        We couldn't find any talent matching those specific filters.
+      </p>
     </div>
   );
 }
 
 function ErrorState({ error, onRetry }) {
   return (
-    <div style={{ minHeight: "55vh", display: "grid", placeItems: "center" }}>
-      <div style={{ textAlign: "center", maxWidth: 520 }}>
-        <div style={{ fontSize: 64, color: "rgb(220,38,38)" }}>!</div>
-        <div
-          style={{
-            fontFamily: "Space Grotesk, system-ui",
-            fontSize: 22,
-            fontWeight: 900,
-            color: staffari.deepJungleGreen,
-          }}
-        >
-          Something Went Wrong
-        </div>
-        <div
-          style={{ marginTop: 8, color: staffari.mutedOlive, fontWeight: 700 }}
-        >
-          {String(error?.message || error || "Unknown error")}
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <button onClick={onRetry} style={primaryActionBtn()}>
-            Retry
-          </button>
-        </div>
-      </div>
+    <div
+      style={{
+        textAlign: "center",
+        padding: "60px 20px",
+        background: "#fff",
+        borderRadius: "24px",
+      }}
+    >
+      <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+      <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0f3d34" }}>
+        Something went wrong
+      </h3>
+      <p style={{ color: "#7b6f57", fontSize: "14px", marginBottom: "24px" }}>
+        {error?.message || "Check your internet connection."}
+      </p>
+      <button onClick={onRetry} style={primaryActionBtn()}>
+        Try Again
+      </button>
     </div>
   );
-}
-
-function iconBtn() {
-  return {
-    border: "1px solid rgba(123,111,87,0.25)",
-    background: "#fff",
-    borderRadius: 12,
-    padding: "8px 10px",
-    cursor: "pointer",
-    fontWeight: 900,
-    color: staffari.deepJungleGreen,
-  };
-}
-
-function input() {
-  return {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 14,
-    border: "1px solid rgba(123,111,87,0.25)",
-    outline: "none",
-    background: "#fff",
-    fontFamily: "Poppins, system-ui",
-    fontWeight: 700,
-    boxSizing: "border-box",
-  };
-}
-
-function label() {
-  return { color: staffari.mutedOlive, fontWeight: 900, marginBottom: 6 };
-}
-
-function fieldWrap() {
-  return { marginTop: 12 };
-}
-
-function chipStyle() {
-  return {
-    padding: "6px 10px",
-    borderRadius: 999,
-    background: "rgba(25,95,78,0.10)",
-    border: "1px solid rgba(25,95,78,0.25)",
-    color: staffari.deepJungleGreen,
-    fontWeight: 900,
-    fontSize: 12,
-  };
-}
-
-function moreBtn() {
-  return {
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    color: staffari.deepJungleGreen,
-    fontWeight: 900,
-    padding: 0,
-    textDecoration: "underline",
-  };
-}
-
-function primaryActionBtn() {
-  return {
-    background: staffari.emeraldGreen,
-    color: "#fff",
-    border: "none",
-    padding: "10px 14px",
-    borderRadius: 12,
-    cursor: "pointer",
-    fontFamily: "Poppins, system-ui",
-    fontWeight: 900,
-  };
-}
-
-function outlineActionBtn() {
-  return {
-    background: "#fff",
-    color: staffari.deepJungleGreen,
-    border: "1px solid rgba(123,111,87,0.35)",
-    padding: "10px 14px",
-    borderRadius: 12,
-    cursor: "pointer",
-    fontFamily: "Poppins, system-ui",
-    fontWeight: 900,
-  };
-}
-
-function sheetBackdrop() {
-  return {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.35)",
-    zIndex: 3000,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    padding: 12,
-  };
-}
-
-function sheet() {
-  return {
-    width: "min(720px, 100%)",
-    background: staffari.cardBackground,
-    borderRadius: 18,
-    border: "1px solid rgba(123,111,87,0.22)",
-    padding: 16,
-  };
 }

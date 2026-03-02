@@ -3,17 +3,66 @@ import { staffari } from "../../../theme/staffariTheme";
 import { lsGet } from "../../../utils/storage";
 import { editJob } from "../../../api/jobCrudApi";
 
+// --- PREMIUM ICONS ---
+const Icons = {
+  Close: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  Edit: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  Save: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
+  ),
+};
+
 export default function JobDetailsPage({ job, onClose, onSaved }) {
   const isHotelView = !!job?.hideApplyButton;
-
-  const jobId = useMemo(() => {
-    return (job?.id ?? job?.job_id ?? job?.jobId ?? job?._id ?? "").toString();
-  }, [job]);
+  const jobId = useMemo(
+    () => (job?.id ?? job?.job_id ?? job?.jobId ?? job?._id ?? "").toString(),
+    [job],
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // controllers -> state
   const [title, setTitle] = useState((job?.title ?? "").toString());
   const [description, setDescription] = useState(
     (job?.description ?? "").toString(),
@@ -35,64 +84,49 @@ export default function JobDetailsPage({ job, onClose, onSaved }) {
   const [amenities, setAmenities] = useState(listToComma(job?.amenities));
   const [certs, setCerts] = useState(listToComma(job?.requiredcertificates));
 
-  const stringToList = (text) => {
-    const t = (text || "").trim();
-    if (!t) return [];
-    return t
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-  };
+  const stringToList = (text) =>
+    (text || "").trim()
+      ? text
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
+      : [];
 
   const saveChanges = async () => {
-    if (!jobId) {
-      alert("Job ID missing.");
-      return;
-    }
-
+    if (!jobId) return alert("Job ID missing.");
     const userId = lsGet("uid", null);
-    if (!userId) {
-      alert("User not logged in.");
-      return;
-    }
-
+    if (!userId) return alert("User not logged in.");
     if (
       !title.trim() ||
       !company.trim() ||
       !location.trim() ||
       !salary.trim() ||
       !jobType.trim() ||
-      !status.trim() ||
       !deadline.trim()
-    ) {
-      alert("All fields are required.");
-      return;
-    }
+    )
+      return alert("All essential fields are required.");
 
     setIsLoading(true);
     try {
       const payload = {
         userid: userId,
-        title: title,
-        description: description,
-        company: company,
-        location: location,
-        salary: salary,
+        title,
+        description,
+        company,
+        location,
+        salary,
         jobtype: jobType,
-        status: status,
+        status,
         applicationdeadline: deadline,
         benefits: stringToList(benefits),
         amenities: stringToList(amenities),
         requiredcertificates: stringToList(certs),
       };
-
       await editJob(jobId, payload);
-
       alert("Job updated successfully!");
       setIsEditing(false);
-
-      if (typeof onSaved === "function") onSaved();
-      if (typeof onClose === "function") onClose();
+      if (onSaved) onSaved();
+      if (onClose) onClose();
     } catch (e) {
       alert(`Failed to update: ${String(e?.message || e)}`);
     } finally {
@@ -101,232 +135,196 @@ export default function JobDetailsPage({ job, onClose, onSaved }) {
   };
 
   return (
-    <div style={{ background: staffari.cardBackground }}>
+    <div
+      style={{
+        background: staffari.cardBackground,
+        height: "95vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap');
+      `}</style>
+
+      {/* Header */}
       <div
-        style={{ padding: 14, display: "flex", alignItems: "center", gap: 12 }}
+        style={{
+          padding: "24px 32px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1.5px solid rgba(15, 61, 52, 0.08)",
+        }}
       >
-        <div
+        <h2
           style={{
-            flex: 1,
-            fontFamily: "Space Grotesk, system-ui",
-            fontWeight: 900,
-            color: staffari.deepJungleGreen,
+            fontFamily: "Bebas Neue",
+            fontSize: "32px",
+            color: "#0f3d34",
+            margin: 0,
+            letterSpacing: "1px",
           }}
         >
-          {isEditing ? "Edit Job" : "Job Details"}
-        </div>
-        <button
-          onClick={onClose}
-          style={{
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            color: staffari.deepJungleGreen,
-            fontSize: 18,
-          }}
-          title="Close"
-        >
-          ✕
+          {isEditing ? "Modify Listing" : "Vacancy Details"}
+        </h2>
+        <button onClick={onClose} style={closeBtnStyle} title="Close">
+          <Icons.Close />
         </button>
       </div>
 
-      <div style={{ height: 1, background: "rgba(0,0,0,0.08)" }} />
+      <div style={{ flex: 1, overflowY: "auto", padding: "32px" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <Section title="General Information">
+            <Field
+              label="Job Title"
+              value={title}
+              onChange={setTitle}
+              editing={isEditing}
+              headline
+            />
+            <Field
+              label="Organization"
+              value={company}
+              onChange={setCompany}
+              editing={isEditing}
+            />
+          </Section>
 
-      <div style={{ padding: 16, overflow: "auto", maxHeight: "80vh" }}>
-        <Card>
-          <Field
-            label="Job Title"
-            value={title}
-            onChange={setTitle}
-            editing={isEditing}
-            headline
-          />
-          <Field
-            label="Company"
-            value={company}
-            onChange={setCompany}
-            editing={isEditing}
-          />
-        </Card>
+          <Section title="Detailed Description">
+            <Field
+              label="Role Overview"
+              value={description}
+              onChange={setDescription}
+              editing={isEditing}
+              textarea
+            />
+          </Section>
 
-        <Card>
-          <Field
-            label="Description"
-            value={description}
-            onChange={setDescription}
-            editing={isEditing}
-            textarea
-          />
-        </Card>
-
-        <Card>
-          <Field
-            label="Location"
-            value={location}
-            onChange={setLocation}
-            editing={isEditing}
-          />
-          <Field
-            label="Job Type"
-            value={jobType}
-            onChange={setJobType}
-            editing={isEditing}
-          />
-          <Field
-            label="Salary"
-            value={salary}
-            onChange={setSalary}
-            editing={isEditing}
-          />
-          <Field
-            label="Status"
-            value={status}
-            onChange={setStatus}
-            editing={isEditing}
-          />
-          <Field
-            label="Application Deadline"
-            value={deadline}
-            onChange={setDeadline}
-            editing={isEditing}
-            placeholder="YYYY-MM-DD"
-          />
-        </Card>
-
-        {isEditing ? (
-          <>
-            <Card>
+          <Section title="Logistics & Compensation">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "24px",
+              }}
+            >
               <Field
-                label="Benefits (comma-separated)"
+                label="Location"
+                value={location}
+                onChange={setLocation}
+                editing={isEditing}
+              />
+              <Field
+                label="Employment Type"
+                value={jobType}
+                onChange={setJobType}
+                editing={isEditing}
+              />
+              <Field
+                label="Expected Salary"
+                value={salary}
+                onChange={setSalary}
+                editing={isEditing}
+              />
+              <Field
+                label="Application Deadline"
+                value={deadline}
+                onChange={setDeadline}
+                editing={isEditing}
+                placeholder="YYYY-MM-DD"
+              />
+              <Field
+                label="Posting Status"
+                value={status}
+                onChange={setStatus}
+                editing={isEditing}
+              />
+            </div>
+          </Section>
+
+          {isEditing ? (
+            <Section title="Tags & Requirements (Comma Separated)">
+              <Field
+                label="Perks & Benefits"
                 value={benefits}
                 onChange={setBenefits}
                 editing
                 textarea
               />
-            </Card>
-            <Card>
               <Field
-                label="Amenities (comma-separated)"
+                label="On-site Amenities"
                 value={amenities}
                 onChange={setAmenities}
                 editing
                 textarea
               />
-            </Card>
-            <Card>
               <Field
-                label="Required Certificates (comma-separated)"
+                label="Necessary Certifications"
                 value={certs}
                 onChange={setCerts}
                 editing
                 textarea
               />
-            </Card>
-          </>
-        ) : (
-          <>
-            {Array.isArray(job?.benefits) && job.benefits.length ? (
-              <TagList title="Benefits" items={job.benefits} />
-            ) : null}
-            {Array.isArray(job?.amenities) && job.amenities.length ? (
-              <TagList title="Amenities" items={job.amenities} />
-            ) : null}
-            {Array.isArray(job?.requiredcertificates) &&
-            job.requiredcertificates.length ? (
-              <TagList
-                title="Required Certificates"
-                items={job.requiredcertificates}
-              />
-            ) : null}
-          </>
-        )}
-
-        <div style={{ height: 90 }} />
+            </Section>
+          ) : (
+            <>
+              {!!job?.benefits?.length && (
+                <TagSection title="Perks & Benefits" items={job.benefits} />
+              )}
+              {!!job?.amenities?.length && (
+                <TagSection title="On-site Amenities" items={job.amenities} />
+              )}
+              {!!job?.requiredcertificates?.length && (
+                <TagSection
+                  title="Required Certifications"
+                  items={job.requiredcertificates}
+                />
+              )}
+            </>
+          )}
+          <div style={{ height: 40 }} />
+        </div>
       </div>
 
-      {/* Bottom action area */}
+      {/* Footer Actions */}
       <div
         style={{
-          position: "sticky",
-          bottom: 0,
-          background: staffari.cardBackground,
-          padding: 14,
-          borderTop: "1px solid rgba(0,0,0,0.08)",
+          padding: "20px 32px",
+          borderTop: "1.5px solid rgba(15, 61, 52, 0.08)",
+          background: "#fff",
         }}
       >
         {isHotelView ? (
           isEditing ? (
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: "16px" }}>
               <button
                 disabled={isLoading}
                 onClick={saveChanges}
-                style={{
-                  flex: 1,
-                  background: staffari.emeraldGreen,
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px 14px",
-                  borderRadius: 16,
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                  fontFamily: "Poppins, system-ui",
-                  fontWeight: 900,
-                  opacity: isLoading ? 0.7 : 1,
-                }}
+                style={primaryActionBtn}
               >
-                {isLoading ? "Saving..." : "Save Changes"}
+                <Icons.Save />{" "}
+                {isLoading ? "Synchronizing..." : "Update Vacancy"}
               </button>
-
               <button
                 disabled={isLoading}
                 onClick={() => setIsEditing(false)}
-                style={{
-                  background: "transparent",
-                  color: staffari.mutedOlive,
-                  border: "none",
-                  padding: "12px 14px",
-                  borderRadius: 16,
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                  fontFamily: "Poppins, system-ui",
-                  fontWeight: 900,
-                }}
+                style={outlineActionBtn}
               >
-                Cancel
+                Discard
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              style={{
-                width: "100%",
-                background: staffari.emeraldGreen,
-                color: "#fff",
-                border: "none",
-                padding: "14px 16px",
-                borderRadius: 16,
-                cursor: "pointer",
-                fontFamily: "Poppins, system-ui",
-                fontWeight: 900,
-              }}
-            >
-              Edit Job
+            <button onClick={() => setIsEditing(true)} style={primaryActionBtn}>
+              <Icons.Edit /> Edit Vacancy
             </button>
           )
         ) : (
           <button
             disabled
-            style={{
-              width: "100%",
-              background: staffari.emeraldGreen,
-              color: "#fff",
-              border: "none",
-              padding: "14px 16px",
-              borderRadius: 16,
-              fontFamily: "Poppins, system-ui",
-              fontWeight: 900,
-              opacity: 0.6,
-            }}
+            style={{ ...primaryActionBtn, opacity: 0.5, cursor: "not-allowed" }}
           >
-            Apply Now (Jobseeker flow later)
+            Application Portal Closed
           </button>
         )}
       </div>
@@ -334,19 +332,62 @@ export default function JobDetailsPage({ job, onClose, onSaved }) {
   );
 }
 
-function Card({ children }) {
+// --- SUB-COMPONENTS ---
+
+function Section({ title, children }) {
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 16,
-        border: "1px solid rgba(123,111,87,0.2)",
-        padding: 16,
-        marginBottom: 16,
-        fontFamily: "Poppins, system-ui",
-      }}
-    >
-      {children}
+    <div style={{ marginBottom: "40px" }}>
+      <h3
+        style={{
+          fontSize: "12px",
+          fontWeight: 800,
+          color: "#7b6f57",
+          textTransform: "uppercase",
+          letterSpacing: "1.5px",
+          marginBottom: "20px",
+          borderLeft: "3px solid #0f3d34",
+          paddingLeft: "12px",
+        }}
+      >
+        {title}
+      </h3>
+      <div
+        style={{
+          background: "#fff",
+          padding: "24px",
+          borderRadius: "20px",
+          border: "1px solid rgba(15, 61, 52, 0.06)",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TagSection({ title, items }) {
+  return (
+    <div style={{ marginBottom: "32px" }}>
+      <h3
+        style={{
+          fontSize: "12px",
+          fontWeight: 800,
+          color: "#7b6f57",
+          textTransform: "uppercase",
+          letterSpacing: "1.5px",
+          marginBottom: "16px",
+        }}
+      >
+        {title}
+      </h3>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        {items.map((it, idx) => (
+          <span key={idx} style={pillStyle}>
+            {it}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -358,103 +399,116 @@ function Field({
   editing,
   headline,
   textarea,
-  placeholder = "",
+  placeholder,
 }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div
+    <div style={{ marginBottom: "20px" }}>
+      <label
         style={{
-          fontSize: 13,
-          fontWeight: 900,
-          color: staffari.mutedOlive,
-          marginBottom: 8,
+          display: "block",
+          fontSize: "11px",
+          fontWeight: 800,
+          color: "#7b6f57",
+          marginBottom: "8px",
+          textTransform: "uppercase",
         }}
       >
         {label}
-      </div>
+      </label>
       {editing ? (
         textarea ? (
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            rows={3}
+            rows={4}
+            style={inputStyle}
             placeholder={placeholder}
-            style={editStyle()}
           />
         ) : (
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            style={inputStyle}
             placeholder={placeholder}
-            style={editStyle()}
           />
         )
       ) : (
         <div
           style={{
-            fontFamily: headline
-              ? "Space Grotesk, system-ui"
-              : "Poppins, system-ui",
-            fontWeight: headline ? 900 : 600,
-            fontSize: headline ? 22 : 15,
-            color: staffari.charcoalBlack,
+            fontFamily: headline ? "Poppins" : "Poppins",
+            fontWeight: headline ? 800 : 600,
+            fontSize: headline ? "24px" : "16px",
+            color: "#0f3d34",
             whiteSpace: "pre-wrap",
             lineHeight: 1.5,
           }}
         >
-          {String(value || "Not provided")}
+          {value || "—"}
         </div>
       )}
     </div>
   );
 }
 
-function TagList({ title, items }) {
-  return (
-    <Card>
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 900,
-          color: staffari.mutedOlive,
-          marginBottom: 10,
-        }}
-      >
-        {title}
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {items.map((it, idx) => (
-          <span
-            key={idx}
-            style={{
-              background: "rgba(25,95,78,0.10)",
-              border: "1px solid rgba(25,95,78,0.25)",
-              color: staffari.deepJungleGreen,
-              padding: "6px 10px",
-              borderRadius: 999,
-              fontWeight: 800,
-              fontSize: 12,
-            }}
-          >
-            {String(it)}
-          </span>
-        ))}
-      </div>
-    </Card>
-  );
-}
+// --- STYLES ---
 
-function editStyle() {
-  return {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(123,111,87,0.25)",
-    outline: "none",
-    background: "#eee",
-    fontFamily: "Poppins, system-ui",
-    fontWeight: 700,
-    color: staffari.charcoalBlack,
-    boxSizing: "border-box",
-  };
-}
+const closeBtnStyle = {
+  border: "none",
+  background: "#f0f2f1",
+  color: "#0f3d34",
+  padding: "10px",
+  borderRadius: "12px",
+  cursor: "pointer",
+  display: "flex",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "14px",
+  borderRadius: "12px",
+  border: "1.5px solid rgba(15, 61, 52, 0.1)",
+  outline: "none",
+  background: "#f9f8f6",
+  fontFamily: "Poppins",
+  fontWeight: 600,
+  color: "#0f3d34",
+  boxSizing: "border-box",
+};
+
+const primaryActionBtn = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  background: "#0f3d34",
+  color: "#fff",
+  border: "none",
+  padding: "16px",
+  borderRadius: "14px",
+  fontFamily: "Poppins",
+  fontWeight: 800,
+  fontSize: "15px",
+  cursor: "pointer",
+  transition: "all 0.2s",
+};
+
+const outlineActionBtn = {
+  padding: "16px 32px",
+  background: "transparent",
+  color: "#7b6f57",
+  border: "none",
+  fontFamily: "Poppins",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const pillStyle = {
+  background: "#f0f2f1",
+  color: "#0f3d34",
+  padding: "8px 16px",
+  borderRadius: "10px",
+  fontSize: "13px",
+  fontWeight: 700,
+  border: "1px solid rgba(15, 61, 52, 0.05)",
+};

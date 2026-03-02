@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { staffari } from "../../../theme/staffariTheme";
 import { lsGet } from "../../../utils/storage";
 import { fetchActiveJobsSummary } from "../../../api/hotelApplicantsApi";
 import { useNavigate } from "react-router-dom";
 
+// --- CONSTANTS ---
 const indianStates = [
   "Andhra Pradesh",
   "Arunachal Pradesh",
@@ -138,15 +138,123 @@ const departmentRoles = {
   "Transport/Logistics": ["Driver", "Transport Coordinator"],
 };
 
+// --- ICONS ---
+const Icons = {
+  Filter: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+  ),
+  Applicants: () => (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  Accepted: () => (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  Pending: () => (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
+  Alert: () => (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#E53935"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  ),
+  Briefcase: () => (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </svg>
+  ),
+};
+
+// --- MAIN COMPONENT ---
 export default function JobApplicantsDashboardPage() {
   const navigate = useNavigate();
-
   const [items, setItems] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-
   const [page, setPage] = useState(1);
   const limit = 20;
 
@@ -160,8 +268,6 @@ export default function JobApplicantsDashboardPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterModalKey, setFilterModalKey] = useState(0);
-
-  // Used to re-fetch on Retry even if filters are unchanged
   const [reloadTick, setReloadTick] = useState(0);
 
   const scrollRef = useRef(null);
@@ -174,20 +280,14 @@ export default function JobApplicantsDashboardPage() {
 
   const normalizeJobs = (jobs) => {
     const list = Array.isArray(jobs) ? jobs : [];
-    return list.map((job) => {
-      const applicantCount =
-        Number(job?.applicants_count ?? 0) ||
-        parseInt(String(job?.applicants_count ?? "0"), 10) ||
-        0;
-      return { jobData: job, applicantCount };
-    });
+    return list.map((job) => ({
+      jobData: job,
+      applicantCount: Number(job?.applicants_count ?? 0) || 0,
+    }));
   };
 
-  // Effect does ONLY the async fetch + state updates AFTER await.
-  // No synchronous "reset" setState calls here => no lint warning.
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       try {
         const result = await fetchActiveJobsSummary({
@@ -197,50 +297,37 @@ export default function JobApplicantsDashboardPage() {
           department,
           location,
         });
-
         if (cancelled) return;
-
         setItems(normalizeJobs(result.jobs));
         setHasMore(!!result.hasMore);
         setPage(1);
-
         setTotalApplicants(result.totalApplicants);
         setTotalAccepted(result.totalAccepted);
         setTotalPendingOrRejected(result.totalPendingOrRejected);
-
         setError(null);
       } catch (e) {
         if (cancelled) return;
-
         setError(e);
         setItems([]);
-        setHasMore(true);
-        setPage(1);
-
-        setTotalApplicants(0);
-        setTotalAccepted(0);
-        setTotalPendingOrRejected(0);
       } finally {
-        if (cancelled);
         setIsFirstLoad(false);
         setIsLoadingMore(false);
       }
     })();
-
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [department, location, includeExpired, reloadTick]);
 
   const loadNextPageIfNeeded = async () => {
-    if (isFirstLoad) return;
-    if (isLoadingMore) return;
-    if (!hasMore) return;
-    if (error && items.length === 0) return;
-
+    if (
+      isFirstLoad ||
+      isLoadingMore ||
+      !hasMore ||
+      (error && items.length === 0)
+    )
+      return;
     setIsLoadingMore(true);
-
     try {
       const nextPage = page + 1;
       const result = await fetchActiveJobsSummary({
@@ -250,14 +337,9 @@ export default function JobApplicantsDashboardPage() {
         department,
         location,
       });
-
       setPage(nextPage);
       setItems((prev) => prev.concat(normalizeJobs(result.jobs)));
       setHasMore(!!result.hasMore);
-
-      setTotalApplicants(result.totalApplicants);
-      setTotalAccepted(result.totalAccepted);
-      setTotalPendingOrRejected(result.totalPendingOrRejected);
     } catch (e) {
       setError(e);
     } finally {
@@ -268,17 +350,12 @@ export default function JobApplicantsDashboardPage() {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-
     const onScroll = () => {
-      const threshold = 250;
-      if (el.scrollTop >= el.scrollHeight - el.clientHeight - threshold) {
+      if (el.scrollTop >= el.scrollHeight - el.clientHeight - 250)
         loadNextPageIfNeeded();
-      }
     };
-
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFirstLoad, isLoadingMore, hasMore, page, error, items.length]);
 
   const hotelId = lsGet("uid", null);
@@ -292,28 +369,18 @@ export default function JobApplicantsDashboardPage() {
   };
 
   const openFilters = () => {
-    setFilterModalKey((k) => k + 1); // remount modal so it initializes from latest "initial"
+    setFilterModalKey((k) => k + 1);
     setIsFilterOpen(true);
   };
 
   const clearFilters = () => {
-    // Reset happens in handler (NOT in effect)
     setDepartment(null);
     setLocation(null);
     setIncludeExpired(true);
-
     setIsFilterOpen(false);
-
     setIsFirstLoad(true);
-    setIsLoadingMore(false);
-    setError(null);
     setItems([]);
-    setHasMore(true);
     setPage(1);
-    setTotalApplicants(0);
-    setTotalAccepted(0);
-    setTotalPendingOrRejected(0);
-
     setReloadTick((t) => t + 1);
   };
 
@@ -321,112 +388,115 @@ export default function JobApplicantsDashboardPage() {
     setDepartment(d || null);
     setLocation(l || null);
     setIncludeExpired(!!ie);
-
     setIsFilterOpen(false);
-
     setIsFirstLoad(true);
-    setIsLoadingMore(false);
-    setError(null);
     setItems([]);
-    setHasMore(true);
     setPage(1);
-    setTotalApplicants(0);
-    setTotalAccepted(0);
-    setTotalPendingOrRejected(0);
-
     setReloadTick((t) => t + 1);
   };
 
   const retry = () => {
     setIsFirstLoad(true);
-    setIsLoadingMore(false);
     setError(null);
     setItems([]);
-    setHasMore(true);
-    setPage(1);
-    setTotalApplicants(0);
-    setTotalAccepted(0);
-    setTotalPendingOrRejected(0);
-
     setReloadTick((t) => t + 1);
   };
 
   return (
-    <div style={{ background: staffari.cardBackground, minHeight: 520 }}>
-      {/* Header */}
+    <div style={{ minHeight: "100%" }}>
+      {/* HEADER SECTION */}
       <div
         style={{
-          padding: "20px 20px 12px",
           display: "flex",
-          alignItems: "center",
-          gap: 12,
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          marginBottom: "32px",
         }}
       >
-        <div style={{ flex: 1 }}>
-          <div
+        <div>
+          <h1
             style={{
-              fontFamily: "Space Grotesk, system-ui",
-              fontSize: 32,
-              fontWeight: 800,
-              color: staffari.deepJungleGreen,
-              lineHeight: 1.1,
+              fontFamily: "Bebas Neue",
+              fontSize: "42px",
+              color: "#0f3d34",
+              margin: 0,
+              letterSpacing: "1px",
             }}
           >
             Job Postings
-          </div>
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              color: "#7b6f57",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
+          >
+            Manage your active listings and track applicant progress.
+          </p>
         </div>
 
         <button
-          type="button"
-          title="Filters"
           onClick={openFilters}
           style={{
-            border: "none",
-            background: "transparent",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "#fff",
+            border: "1px solid rgba(15, 61, 52, 0.1)",
+            padding: "10px 20px",
+            borderRadius: "12px",
             cursor: "pointer",
-            color: staffari.deepJungleGreen,
-            fontSize: 18,
-            padding: 10,
-            borderRadius: 12,
+            color: "#0f3d34",
+            fontWeight: 700,
+            transition: "all 0.2s",
           }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#f0f2f1")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
         >
-          🎛️
+          <Icons.Filter />
+          Filters
         </button>
       </div>
 
-      {/* Totals */}
+      {/* STATS SECTION */}
       {!isFirstLoad && (
-        <div style={{ padding: "0 16px 12px" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              gap: 12,
-            }}
-          >
-            <StatCard
-              title="Applicants"
-              value={String(totalApplicants)}
-              icon="👥"
-            />
-            <StatCard
-              title="Accepted"
-              value={String(totalAccepted)}
-              icon="✅"
-            />
-            <StatCard
-              title="Pending/Rejected"
-              value={String(totalPendingOrRejected)}
-              icon="⏳"
-            />
-          </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "20px",
+            marginBottom: "32px",
+          }}
+        >
+          <StatCard
+            title="Total Applicants"
+            value={totalApplicants}
+            Icon={Icons.Applicants}
+            color="#0f3d34"
+          />
+          <StatCard
+            title="Accepted"
+            value={totalAccepted}
+            Icon={Icons.Accepted}
+            color="#10b981"
+          />
+          <StatCard
+            title="Pending"
+            value={totalPendingOrRejected}
+            Icon={Icons.Pending}
+            color="#f59e0b"
+          />
         </div>
       )}
 
-      {/* List area */}
+      {/* CONTENT LIST */}
       <div
         ref={scrollRef}
-        style={{ height: 560, overflow: "auto", padding: 16 }}
+        style={{
+          paddingRight: "8px",
+        }}
       >
         {isFirstLoad ? (
           <ShimmerList />
@@ -435,10 +505,12 @@ export default function JobApplicantsDashboardPage() {
         ) : items.length === 0 ? (
           <EmptyState />
         ) : (
-          <>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
             {items.map((it, idx) => (
               <JobCard
-                key={it?.jobData?.id || it?.jobData?._id || idx}
+                key={it?.jobData?.id || idx}
                 item={it}
                 onOpen={() => openJob(it)}
               />
@@ -447,23 +519,22 @@ export default function JobApplicantsDashboardPage() {
             {isLoadingMore && (
               <div
                 style={{
-                  padding: "16px 0",
                   textAlign: "center",
-                  color: staffari.emeraldGreen,
-                  fontWeight: 800,
+                  padding: "24px",
+                  color: "#0f3d34",
+                  fontWeight: 700,
+                  fontSize: "14px",
                 }}
               >
-                Loading more...
+                Fetching more talent...
               </div>
             )}
-
-            {!hasMore && <div style={{ height: 24 }} />}
-          </>
+          </div>
         )}
       </div>
 
-      {/* IMPORTANT: mount/unmount modal (no useEffect inside modal needed) */}
-      {isFilterOpen ? (
+      {/* FILTER MODAL */}
+      {isFilterOpen && (
         <FilterModal
           key={filterModalKey}
           onClose={() => setIsFilterOpen(false)}
@@ -474,45 +545,50 @@ export default function JobApplicantsDashboardPage() {
           onApply={applyFilters}
           disabled={!hotelId}
         />
-      ) : null}
+      )}
     </div>
   );
 }
 
-function StatCard({ title, value, icon }) {
+// --- SUB-COMPONENTS ---
+
+function StatCard({ title, value, Icon, color }) {
   return (
     <div
       style={{
         background: "#fff",
-        borderRadius: 12,
-        padding: 16,
-        boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
-        fontFamily: "Poppins, system-ui",
+        padding: "24px",
+        borderRadius: "20px",
+        border: "1px solid rgba(15, 61, 52, 0.05)",
+        boxShadow: "0 4px 15px rgba(0,0,0,0.02)",
       }}
     >
       <div
         style={{
-          fontSize: 14,
-          color: "rgb(96,93,93)",
-          fontWeight: 600,
-          textAlign: "center",
-        }}
-      >
-        {title}
-      </div>
-      <div style={{ height: 12 }} />
-      <div
-        style={{
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          gap: 10,
+          gap: "10px",
+          marginBottom: "12px",
+          color: "#7b6f57",
         }}
       >
-        <div style={{ fontSize: 18 }}>{icon}</div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: "#111" }}>
-          {value}
+        <div style={{ color }}>
+          {" "}
+          <Icon />{" "}
         </div>
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+          }}
+        >
+          {title}
+        </span>
+      </div>
+      <div style={{ fontSize: "32px", fontWeight: 800, color: "#0f3d34" }}>
+        {value}
       </div>
     </div>
   );
@@ -523,61 +599,71 @@ function JobCard({ item, onOpen }) {
   return (
     <div
       onClick={onOpen}
-      role="button"
-      tabIndex={0}
       style={{
         background: "#fff",
-        borderRadius: 16,
-        border: "1px solid rgba(123,111,87,0.2)",
-        padding: 20,
-        marginBottom: 16,
+        padding: "20px 24px",
+        borderRadius: "16px",
+        border: "1px solid rgba(15, 61, 52, 0.08)",
+        cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        gap: 16,
-        cursor: "pointer",
+        justifyContent: "space-between",
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = "0 8px 24px rgba(15, 61, 52, 0.08)";
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "none";
       }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
+      <div style={{ flex: 1 }}>
+        <h3
           style={{
-            fontFamily: "Space Grotesk, system-ui",
-            fontSize: 20,
+            margin: "0 0 4px",
+            fontSize: "18px",
             fontWeight: 800,
-            color: staffari.deepJungleGreen,
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-            textOverflow: "ellipsis",
+            color: "#0f3d34",
           }}
         >
           {job?.title ?? "No Title"}
-        </div>
-        <div style={{ height: 8 }} />
+        </h3>
         <div
           style={{
-            fontFamily: "Poppins, system-ui",
-            fontSize: 16,
-            color: staffari.charcoalBlack,
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-            textOverflow: "ellipsis",
+            display: "flex",
+            gap: "12px",
+            fontSize: "14px",
+            color: "#7b6f57",
+            fontWeight: 500,
           }}
         >
-          {job?.company ?? "No Company"}
+          <span>{job?.company || "Hotel Member"}</span>
+          <span style={{ opacity: 0.3 }}>|</span>
+          <span>{job?.location || "India"}</span>
         </div>
       </div>
 
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 24, color: staffari.emeraldGreen }}>👥</div>
-        <div style={{ height: 4 }} />
-        <div
-          style={{
-            fontFamily: "Poppins, system-ui",
-            fontSize: 20,
-            fontWeight: 900,
-            color: staffari.emeraldGreen,
-          }}
-        >
-          {String(item?.applicantCount ?? 0)}
+      <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#0f3d34" }}>
+            {item.applicantCount}
+          </div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              color: "#7b6f57",
+              textTransform: "uppercase",
+            }}
+          >
+            Applicants
+          </div>
+        </div>
+        <div style={{ color: "rgba(15, 61, 52, 0.2)" }}>
+          {" "}
+          <Icons.ChevronRight />{" "}
         </div>
       </div>
     </div>
@@ -586,100 +672,91 @@ function JobCard({ item, onOpen }) {
 
 function ShimmerList() {
   return (
-    <div>
-      {Array.from({ length: 5 }).map((_, i) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {[1, 2, 3, 4].map((i) => (
         <div
           key={i}
           style={{
-            height: 100,
-            marginBottom: 16,
-            borderRadius: 16,
-            background:
-              "linear-gradient(90deg, rgba(240,240,240,1) 25%, rgba(255,255,255,1) 50%, rgba(240,240,240,1) 75%)",
-            backgroundSize: "400% 100%",
-            animation: "shimmer 1.2s ease-in-out infinite",
+            height: "90px",
+            borderRadius: "16px",
+            background: "#f5f5f5",
+            animation: "pulse 1.5s infinite ease-in-out",
           }}
         />
       ))}
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 100% 0; }
-          100% { background-position: 0 0; }
-        }
-      `}</style>
+      <style>{`@keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }`}</style>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div style={{ textAlign: "center", padding: 24 }}>
-      <div style={{ fontSize: 64, color: staffari.mutedOlive }}>🧰</div>
-      <div style={{ height: 12 }} />
+    <div style={{ textAlign: "center", padding: "60px 20px" }}>
       <div
         style={{
-          fontFamily: "Space Grotesk, system-ui",
-          fontSize: 22,
-          fontWeight: 900,
-          color: staffari.deepJungleGreen,
+          color: "#7b6f57",
+          marginBottom: "20px",
+          display: "flex",
+          justifyContent: "center",
         }}
       >
-        No Jobs Posted Yet
+        <Icons.Briefcase />
       </div>
-      <div style={{ height: 8 }} />
-      <div
+      <h2
         style={{
-          fontFamily: "Poppins, system-ui",
-          fontSize: 16,
-          color: staffari.mutedOlive,
+          fontFamily: "Bebas Neue",
+          fontSize: "28px",
+          color: "#0f3d34",
+          margin: 0,
         }}
       >
-        Post a job to start finding talent.
-      </div>
+        No Jobs Posted
+      </h2>
+      <p style={{ color: "#7b6f57", fontSize: "14px" }}>
+        Post your first vacancy to start hunting for the right talent.
+      </p>
     </div>
   );
 }
 
 function ErrorWidget({ error, onRetry }) {
   return (
-    <div style={{ textAlign: "center", padding: 20 }}>
-      <div style={{ fontSize: 64, color: "#E53935" }}>⚠️</div>
-      <div style={{ height: 12 }} />
+    <div style={{ textAlign: "center", padding: "40px 20px" }}>
       <div
         style={{
-          fontFamily: "Space Grotesk, system-ui",
-          fontSize: 22,
-          fontWeight: 900,
-          color: staffari.deepJungleGreen,
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "center",
         }}
       >
-        Something Went Wrong
+        <Icons.Alert />
       </div>
-      <div style={{ height: 8 }} />
-      <div
+      <h3
         style={{
-          fontFamily: "Poppins, system-ui",
-          fontSize: 14,
-          color: staffari.mutedOlive,
+          fontSize: "18px",
+          fontWeight: 800,
+          color: "#0f3d34",
+          margin: "0 0 8px",
         }}
       >
-        {String(error?.message || error || "Unknown error")}
-      </div>
-      <div style={{ height: 14 }} />
+        Connection Error
+      </h3>
+      <p style={{ color: "#7b6f57", fontSize: "14px", margin: "0 0 20px" }}>
+        {error?.message || "Could not load data."}
+      </p>
       <button
         onClick={onRetry}
         style={{
-          background: staffari.emeraldGreen,
+          padding: "10px 24px",
+          borderRadius: "12px",
+          background: "#0f3d34",
           color: "#fff",
           border: "none",
-          padding: "10px 14px",
-          borderRadius: 14,
+          fontWeight: 700,
           cursor: "pointer",
-          fontFamily: "Poppins, system-ui",
-          fontWeight: 800,
         }}
       >
-        Retry
+        Try Again
       </button>
     </div>
   );
@@ -694,7 +771,6 @@ function FilterModal({
   onApply,
   disabled,
 }) {
-  // No useEffect needed: this component mounts fresh each time you open it (key={filterModalKey})
   const [dept, setDept] = useState(initial.department || "");
   const [state, setState] = useState(initial.location || "");
   const [includeExpired, setIncludeExpired] = useState(
@@ -703,171 +779,161 @@ function FilterModal({
 
   return (
     <div
-      onMouseDown={onClose}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.35)",
-        zIndex: 9999,
+        background: "rgba(15, 61, 52, 0.4)",
+        zIndex: 1000,
         display: "grid",
-        placeItems: "end center",
-        padding: 12,
+        placeItems: "center",
+        padding: "20px",
+        backdropFilter: "blur(4px)",
       }}
     >
       <div
-        onMouseDown={(e) => e.stopPropagation()}
         style={{
-          width: "min(720px, 100%)",
-          background: staffari.cardBackground,
-          borderRadius: 18,
-          padding: 16,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          width: "min(420px, 100%)",
+          background: "#fff",
+          borderRadius: "24px",
+          padding: "32px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "24px",
+          }}
+        >
+          <h2
             style={{
-              flex: 1,
-              fontFamily: "Space Grotesk, system-ui",
-              fontSize: 20,
-              fontWeight: 900,
-              color: staffari.deepJungleGreen,
+              fontFamily: "Bebas Neue",
+              fontSize: "28px",
+              color: "#0f3d34",
+              margin: 0,
             }}
           >
-            Filters
-          </div>
+            Filter Talent
+          </h2>
           <button
             onClick={onClose}
             style={{
               border: "none",
-              background: "transparent",
+              background: "none",
               cursor: "pointer",
-              color: staffari.mutedOlive,
-              fontSize: 18,
+              fontSize: "20px",
+              color: "#0f3d34",
             }}
-            title="Close"
           >
             ✕
           </button>
         </div>
 
-        <div style={{ height: 12 }} />
-
-        <label
-          style={{
-            display: "block",
-            fontFamily: "Poppins, system-ui",
-            color: staffari.mutedOlive,
-            fontWeight: 700,
-          }}
-        >
-          Department
+        <div style={{ marginBottom: "20px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#7b6f57",
+              marginBottom: "8px",
+            }}
+          >
+            DEPARTMENT
+          </label>
           <select
             value={dept}
             onChange={(e) => setDept(e.target.value)}
-            style={selectStyle()}
+            style={selectStyle}
           >
-            <option value="">Select department</option>
+            <option value="">All Departments</option>
             {deptItems.map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
-        <div style={{ height: 12 }} />
-
-        <label
-          style={{
-            display: "block",
-            fontFamily: "Poppins, system-ui",
-            color: staffari.mutedOlive,
-            fontWeight: 700,
-          }}
-        >
-          Location (State/UT)
+        <div style={{ marginBottom: "24px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#7b6f57",
+              marginBottom: "8px",
+            }}
+          >
+            LOCATION
+          </label>
           <select
             value={state}
             onChange={(e) => setState(e.target.value)}
-            style={selectStyle()}
+            style={selectStyle}
           >
-            <option value="">Select location</option>
+            <option value="">Across India</option>
             {stateItems.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
             ))}
           </select>
-        </label>
-
-        <div style={{ height: 8 }} />
+        </div>
 
         <label
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            fontFamily: "Poppins, system-ui",
-            color: staffari.charcoalBlack,
-            fontWeight: 700,
+            gap: "12px",
+            cursor: "pointer",
+            marginBottom: "32px",
           }}
         >
           <input
             type="checkbox"
             checked={includeExpired}
             onChange={(e) => setIncludeExpired(e.target.checked)}
-            style={{
-              width: 18,
-              height: 18,
-              accentColor: staffari.emeraldGreen,
-            }}
+            style={{ accentColor: "#0f3d34", width: "18px", height: "18px" }}
           />
-          Include expired
+          <span style={{ fontSize: "14px", fontWeight: 600, color: "#0f3d34" }}>
+            Show Expired Postings
+          </span>
         </label>
 
-        <div style={{ height: 12 }} />
-
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: "12px" }}>
           <button
             disabled={disabled}
             onClick={onClear}
             style={{
               flex: 1,
-              borderRadius: 14,
-              padding: "12px 14px",
-              cursor: disabled ? "not-allowed" : "pointer",
-              border: "1px solid rgba(123,111,87,0.35)",
-              background: "transparent",
-              color: staffari.deepJungleGreen,
-              fontFamily: "Poppins, system-ui",
-              fontWeight: 800,
-              opacity: disabled ? 0.6 : 1,
+              padding: "14px",
+              borderRadius: "12px",
+              border: "1px solid #0f3d34",
+              background: "none",
+              color: "#0f3d34",
+              fontWeight: 700,
+              cursor: "pointer",
             }}
           >
             Clear
           </button>
-
           <button
             disabled={disabled}
             onClick={() =>
-              onApply({
-                department: dept || null,
-                location: state || null,
-                includeExpired,
-              })
+              onApply({ department: dept, location: state, includeExpired })
             }
             style={{
               flex: 1,
-              borderRadius: 14,
-              padding: "12px 14px",
-              cursor: disabled ? "not-allowed" : "pointer",
+              padding: "14px",
+              borderRadius: "12px",
               border: "none",
-              background: staffari.emeraldGreen,
+              background: "#0f3d34",
               color: "#fff",
-              fontFamily: "Poppins, system-ui",
-              fontWeight: 900,
-              opacity: disabled ? 0.6 : 1,
+              fontWeight: 700,
+              cursor: "pointer",
             }}
           >
             Apply
@@ -878,17 +944,14 @@ function FilterModal({
   );
 }
 
-function selectStyle() {
-  return {
-    width: "100%",
-    marginTop: 6,
-    padding: "12px 14px",
-    borderRadius: 14,
-    border: "1px solid rgba(123,111,87,0.25)",
-    outline: "none",
-    background: "#fff",
-    color: staffari.charcoalBlack,
-    fontFamily: "Poppins, system-ui",
-    fontWeight: 600,
-  };
-}
+const selectStyle = {
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: "12px",
+  border: "1px solid rgba(15, 61, 52, 0.15)",
+  fontSize: "15px",
+  fontFamily: "Poppins",
+  outline: "none",
+  background: "#f9f8f6",
+  color: "#0f3d34",
+};
